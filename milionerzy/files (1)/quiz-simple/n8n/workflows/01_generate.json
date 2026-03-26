@@ -1,0 +1,67 @@
+{
+  "name": "Quiz - Generuj pytania (Gemini)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={{ $credentials.geminiApi.apiKey }}",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ contents: [{ parts: [{ text: 'Wygeneruj 4 pytania quizowe z dziedziny: ' + ($input.first().json.body.domain || $input.first().json.domain) + '. Odpowiedz TYLKO w JSON bez markdown: {\"questions\":[{\"question\":\"treść\",\"options\":{\"A\":\"...\",\"B\":\"...\",\"C\":\"...\",\"D\":\"...\"},\"correct\":\"A\"}]}' }] }] }) }}",
+        "options": {}
+      },
+      "id": "node2",
+      "name": "Gemini API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [420, 300],
+      "credentials": {
+        "geminiApi": {
+          "id": "gemini-cred",
+          "name": "Gemini API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.candidates[0].content.parts[0].text;\nconst clean = raw.replace(/```json|```/g, '').trim();\nreturn [{ json: JSON.parse(clean) }];"
+      },
+      "id": "node3",
+      "name": "Parsuj JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": { "responseHeaders": { "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }] } }
+      },
+      "id": "node4",
+      "name": "Odpowiedź",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [860, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Gemini API", "type": "main", "index": 0 }]] },
+    "Gemini API": { "main": [[{ "node": "Parsuj JSON", "type": "main", "index": 0 }]] },
+    "Parsuj JSON": { "main": [[{ "node": "Odpowiedź", "type": "main", "index": 0 }]] }
+  },
+  "active": true,
+  "settings": {}
+}

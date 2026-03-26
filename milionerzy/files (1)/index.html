@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Programistyczny</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      background: #f5f5f5;
+      color: #222;
+    }
+
+    nav {
+      background: #333;
+      padding: 12px 20px;
+      display: flex;
+      gap: 12px;
+    }
+
+    nav button {
+      background: none;
+      border: 1px solid #666;
+      color: #ccc;
+      padding: 6px 16px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    nav button.active {
+      background: #fff;
+      color: #333;
+      border-color: #fff;
+    }
+
+    .page { display: none; padding: 30px 20px; max-width: 700px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    h1 { font-size: 22px; margin-bottom: 6px; }
+    h2 { font-size: 18px; margin-bottom: 16px; }
+    p.sub { color: #555; margin-bottom: 20px; font-size: 14px; }
+
+    /* Domain select */
+    select {
+      width: 100%;
+      padding: 10px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      background: white;
+      margin-bottom: 10px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      margin-bottom: 16px;
+    }
+
+    button.primary {
+      background: #333;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    button.primary:hover { background: #555; }
+    button.primary:disabled { background: #aaa; cursor: default; }
+
+    button.secondary {
+      background: white;
+      color: #333;
+      border: 1px solid #999;
+      padding: 10px 24px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    button.secondary:hover { background: #eee; }
+
+    /* Quiz */
+    .question-box {
+      background: white;
+      border: 1px solid #ddd;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .question-num { font-size: 13px; color: #777; margin-bottom: 8px; }
+    .question-text { font-size: 17px; font-weight: bold; margin-bottom: 16px; }
+
+    .option {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      background: white;
+      margin-bottom: 8px;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      font-size: 15px;
+    }
+
+    .option:hover { background: #f0f0f0; }
+    .option.selected { border-color: #333; background: #f0f0f0; }
+    .option.correct { border-color: green; background: #eaffea; }
+    .option.wrong { border-color: red; background: #ffeaea; }
+    .option.disabled { cursor: default; }
+
+    .option-letter {
+      font-weight: bold;
+      min-width: 20px;
+      color: #555;
+    }
+
+    .quiz-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
+    /* Progress */
+    .progress {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 16px;
+    }
+
+    progress {
+      width: 100%;
+      height: 6px;
+      margin-bottom: 20px;
+    }
+
+    /* Results */
+    .score-big {
+      font-size: 48px;
+      font-weight: bold;
+      text-align: center;
+      margin: 20px 0 8px;
+    }
+
+    .score-msg {
+      text-align: center;
+      color: #555;
+      margin-bottom: 24px;
+      font-size: 15px;
+    }
+
+    .result-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+
+    .review-item {
+      background: white;
+      border: 1px solid #ddd;
+      padding: 14px;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .review-item .rq { font-weight: bold; margin-bottom: 6px; }
+    .review-item .ra { color: #555; }
+    .review-ok { border-left: 4px solid green; }
+    .review-bad { border-left: 4px solid red; }
+
+    /* History */
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th, td { border: 1px solid #ddd; padding: 10px 12px; text-align: left; font-size: 14px; }
+    th { background: #eee; }
+    tr:nth-child(even) { background: #f9f9f9; }
+
+    /* Loading / error */
+    .loading { color: #555; font-size: 14px; margin: 20px 0; }
+    .error { color: red; font-size: 14px; margin: 10px 0; background: #fff0f0; padding: 10px; border: 1px solid red; }
+
+    .hidden { display: none; }
+
+    label { font-size: 13px; color: #555; display: block; margin-bottom: 4px; }
+
+    .divider { border: none; border-top: 1px solid #ddd; margin: 24px 0; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <button class="active" onclick="goTo('home')">Quiz</button>
+  <button onclick="goTo('history')">Historia</button>
+</nav>
+
+<!-- HOME -->
+<div class="page active" id="page-home">
+  <h1>Quiz Programistyczny</h1>
+  <p class="sub">Wybierz dziedzinę i sprawdź swoją wiedzę — 4 pytania, wynik od razu.</p>
+
+  <label>Wybierz dziedzinę:</label>
+  <select id="domain-select" onchange="onDomainChange()">
+    <option value="">-- wybierz --</option>
+    <option value="Python">Python</option>
+    <option value="JavaScript">JavaScript</option>
+    <option value="SQL">SQL</option>
+    <option value="Docker">Docker</option>
+    <option value="Git">Git</option>
+    <option value="CSS">CSS</option>
+    <option value="React">React</option>
+    <option value="Linux">Linux</option>
+    <option value="Algorytmy">Algorytmy</option>
+    <option value="inne">Inna (wpisz poniżej)</option>
+  </select>
+
+  <div id="custom-wrap" class="hidden">
+    <label>Wpisz dziedzinę:</label>
+    <input type="text" id="custom-input" placeholder="np. TypeScript, Rust..." />
+  </div>
+
+  <div id="home-error" class="error hidden"></div>
+
+  <button class="primary" onclick="startQuiz()">Rozpocznij quiz</button>
+</div>
+
+<!-- QUIZ -->
+<div class="page" id="page-quiz">
+  <div id="loading-quiz" class="loading">Generowanie pytań...</div>
+  <div id="quiz-content" class="hidden">
+    <div class="progress" id="progress-text"></div>
+    <progress id="progress-bar" value="0" max="4"></progress>
+    <div id="question-area"></div>
+    <div class="quiz-footer">
+      <button class="secondary" onclick="skip()">Pomiń</button>
+      <button class="primary" onclick="next()" id="next-btn">Dalej</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="page" id="page-results">
+  <h2>Wyniki</h2>
+  <div class="score-big" id="score-display"></div>
+  <div class="score-msg" id="score-msg"></div>
+  <div class="result-actions">
+    <button class="secondary" onclick="goTo('history')">Historia</button>
+    <button class="primary" onclick="goTo('home')">Nowy quiz</button>
+  </div>
+  <hr class="divider">
+  <h2>Przegląd odpowiedzi</h2>
+  <div id="review-area"></div>
+</div>
+
+<!-- HISTORY -->
+<div class="page" id="page-history">
+  <h1>Historia quizów</h1>
+  <p class="sub">Ostatnie 20 podejść.</p>
+  <div id="loading-history" class="loading hidden">Ładowanie...</div>
+  <div id="history-content"></div>
+</div>
+
+<script>
+  // ---- CONFIG ----
+  // Jeśli n8n działa lokalnie, zmień na 'n8n'. Domyślnie 'gemini' (bezpośrednio z przeglądarki).
+  const MODE = 'gemini'; // 'gemini' | 'n8n'
+  const GEMINI_KEY = 'WSTAW_TUTAJ_KLUCZ_GEMINI'; // wymagany w trybie gemini
+  const API = { generate: '/api/generate', save: '/api/save', history: '/api/history' };
+
+  // ---- STATE ----
+  let domain = '';
+  let questions = [];
+  let answers = [];
+  let current = 0;
+
+  // ---- NAVIGATION ----
+  function goTo(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    const idx = ['home','quiz','results','history'].indexOf(page);
+    document.querySelectorAll('nav button')[idx < 2 ? 0 : idx - 1]?.classList.add('active');
+    if (page === 'history') loadHistory();
+  }
+
+  // ---- HOME ----
+  function onDomainChange() {
+    const val = document.getElementById('domain-select').value;
+    document.getElementById('custom-wrap').classList.toggle('hidden', val !== 'inne');
+  }
+
+  function getDomain() {
+    const sel = document.getElementById('domain-select').value;
+    if (sel === 'inne') return document.getElementById('custom-input').value.trim();
+    return sel;
+  }
+
+  // ---- QUIZ START ----
+  async function startQuiz() {
+    domain = getDomain();
+    if (!domain) {
+      showError('home-error', 'Wybierz lub wpisz dziedzinę.');
+      return;
+    }
+    hideError('home-error');
+    questions = []; answers = []; current = 0;
+    goTo('quiz');
+    document.getElementById('loading-quiz').classList.remove('hidden');
+    document.getElementById('quiz-content').classList.add('hidden');
+
+    try {
+      if (MODE === 'gemini') {
+        questions = await generateGemini(domain);
+      } else {
+        questions = await generateN8n(domain);
+      }
+      document.getElementById('loading-quiz').classList.add('hidden');
+      document.getElementById('quiz-content').classList.remove('hidden');
+      renderQuestion(0);
+    } catch(e) {
+      document.getElementById('loading-quiz').textContent = 'Błąd: ' + e.message;
+    }
+  }
+
+  // ---- GEMINI DIRECT ----
+  async function generateGemini(domain) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+    const body = {
+      contents: [{
+        parts: [{
+          text: `Wygeneruj 4 pytania quizowe z dziedziny: ${domain}. Odpowiedz TYLKO w JSON bez markdown:\n{"questions":[{"question":"treść","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"A"}]}`
+        }]
+      }]
+    };
+    const r = await fetch(url, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error('Gemini API error ' + r.status + '. Sprawdź klucz API.');
+    const data = await r.json();
+    const text = data.candidates[0].content.parts[0].text.replace(/```json|```/g,'').trim();
+    return JSON.parse(text).questions;
+  }
+
+  // ---- N8N ----
+  async function generateN8n(domain) {
+    const r = await fetch(API.generate, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({domain}) });
+    if (!r.ok) throw new Error('n8n error ' + r.status + '. Sprawdź czy docker compose up działa.');
+    return (await r.json()).questions;
+  }
+
+  // ---- RENDER QUESTION ----
+  function renderQuestion(i) {
+    const q = questions[i];
+    document.getElementById('progress-text').textContent = `Pytanie ${i + 1} z ${questions.length}`;
+    document.getElementById('progress-bar').value = i;
+    document.getElementById('next-btn').textContent = i < questions.length - 1 ? 'Dalej' : 'Zakończ';
+
+    const opts = ['A','B','C','D'];
+    document.getElementById('question-area').innerHTML = `
+      <div class="question-box">
+        <div class="question-num">Pytanie ${i + 1}</div>
+        <div class="question-text">${q.question}</div>
+        ${opts.map(l => q.options[l] ? `
+          <button class="option" onclick="selectAnswer('${l}')" id="opt-${l}">
+            <span class="option-letter">${l}.</span>
+            <span>${q.options[l]}</span>
+          </button>` : '').join('')}
+      </div>
+    `;
+  }
+
+  function selectAnswer(letter) {
+    if (answers[current] !== undefined) return;
+    answers[current] = letter;
+    const correct = questions[current].correct;
+
+    ['A','B','C','D'].forEach(l => {
+      const btn = document.getElementById('opt-' + l);
+      if (btn) btn.classList.add('disabled');
+    });
+
+    const clicked = document.getElementById('opt-' + letter);
+    clicked.classList.add(letter === correct ? 'correct' : 'wrong');
+    if (letter !== correct) {
+      document.getElementById('opt-' + correct)?.classList.add('correct');
+    }
+  }
+
+  function next() {
+    if (answers[current] === undefined) answers[current] = null;
+    current++;
+    if (current >= questions.length) finish();
+    else renderQuestion(current);
+  }
+
+  function skip() {
+    answers[current] = null;
+    next();
+  }
+
+  // ---- RESULTS ----
+  async function finish() {
+    const score = questions.reduce((s, q, i) => s + (answers[i] === q.correct ? 1 : 0), 0);
+    goTo('results');
+    document.getElementById('score-display').textContent = `${score} / ${questions.length}`;
+
+    const pct = score / questions.length;
+    let msg = pct === 1 ? 'Perfekcyjnie!' : pct >= 0.75 ? 'Świetny wynik!' : pct >= 0.5 ? 'Niezły wynik.' : 'Trzeba poćwiczyć.';
+    document.getElementById('score-msg').textContent = msg;
+
+    renderReview(score);
+    await saveResults(score);
+  }
+
+  function renderReview(score) {
+    document.getElementById('review-area').innerHTML = questions.map((q, i) => {
+      const ua = answers[i];
+      const ok = ua === q.correct;
+      return `
+        <div class="review-item ${ok ? 'review-ok' : 'review-bad'}">
+          <div class="rq">${i+1}. ${q.question}</div>
+          <div class="ra">
+            Twoja odpowiedź: <strong>${ua ? ua + ') ' + (q.options[ua]||'') : 'pominięto'}</strong>
+            ${!ok ? ` &nbsp;|&nbsp; Poprawna: <strong>${q.correct}) ${q.options[q.correct]||''}</strong>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function saveResults(score) {
+    try {
+      if (MODE === 'n8n') {
+        await fetch(API.save, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ domain, score, total: questions.length })
+        });
+      } else {
+        // tryb gemini — zapis lokalny
+        const history = JSON.parse(localStorage.getItem('quiz_history') || '[]');
+        history.unshift({ domain, score, total: questions.length, created_at: new Date().toISOString() });
+        localStorage.setItem('quiz_history', JSON.stringify(history.slice(0, 20)));
+      }
+    } catch(e) { console.warn('Nie udało się zapisać:', e.message); }
+  }
+
+  // ---- HISTORY ----
+  async function loadHistory() {
+    document.getElementById('loading-history').classList.remove('hidden');
+    document.getElementById('history-content').innerHTML = '';
+    let rows = [];
+
+    try {
+      if (MODE === 'n8n') {
+        const r = await fetch(API.history);
+        rows = (await r.json()).history || [];
+      } else {
+        rows = JSON.parse(localStorage.getItem('quiz_history') || '[]');
+      }
+    } catch(e) { rows = []; }
+
+    document.getElementById('loading-history').classList.add('hidden');
+
+    if (rows.length === 0) {
+      document.getElementById('history-content').innerHTML = '<p style="color:#777">Brak historii. Rozwiąż pierwszy quiz!</p>';
+      return;
+    }
+
+    document.getElementById('history-content').innerHTML = `
+      <table>
+        <thead><tr><th>Data</th><th>Dziedzina</th><th>Wynik</th></tr></thead>
+        <tbody>
+          ${rows.map(r => {
+            const d = new Date(r.created_at);
+            const date = d.toLocaleDateString('pl-PL') + ' ' + d.toLocaleTimeString('pl-PL', {hour:'2-digit',minute:'2-digit'});
+            return `<tr><td>${date}</td><td>${r.domain}</td><td>${r.score} / ${r.total || 4}</td></tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  // ---- UTILS ----
+  function showError(id, msg) { const e = document.getElementById(id); e.textContent = msg; e.classList.remove('hidden'); }
+  function hideError(id) { document.getElementById(id).classList.add('hidden'); }
+</script>
+</body>
+</html>

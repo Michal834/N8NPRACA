@@ -1,0 +1,54 @@
+{
+  "name": "Quiz - Zapisz wyniki",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "save",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO quiz_sessions (domain, score, total) VALUES ('{{ ($input.first().json.body || $input.first().json).domain }}', {{ ($input.first().json.body || $input.first().json).score }}, 4); SELECT LAST_INSERT_ID() as id;",
+        "options": {}
+      },
+      "id": "node2",
+      "name": "Zapisz sesję",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2,
+      "position": [420, 300],
+      "credentials": {
+        "mySql": {
+          "id": "mysql-cred",
+          "name": "MySQL Quiz"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"ok\": true}",
+        "options": { "responseHeaders": { "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }] } }
+      },
+      "id": "node3",
+      "name": "Odpowiedź",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [640, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Zapisz sesję", "type": "main", "index": 0 }]] },
+    "Zapisz sesję": { "main": [[{ "node": "Odpowiedź", "type": "main", "index": 0 }]] }
+  },
+  "active": true,
+  "settings": {}
+}
